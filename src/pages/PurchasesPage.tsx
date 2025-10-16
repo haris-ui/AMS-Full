@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Search, Eye, X } from 'lucide-react';
+import { Plus, Search, Eye, X, FileText } from 'lucide-react';
+import { simpleInvoiceGenerator } from '../utils/simpleInvoiceGenerator';
 import type { Database } from '../lib/database.types';
 
 type Purchase = Database['public']['Tables']['purchases']['Row'];
@@ -64,12 +65,25 @@ export function PurchasesPage() {
       supabase.from('products').select('*').order('name'),
     ]);
 
-    if (purchasesRes.data) {
+    if (purchasesRes.error) {
+      console.error('Error fetching purchases:', purchasesRes.error);
+      alert('Error loading purchases. Please try again.');
+    } else if (purchasesRes.data) {
       setPurchases(purchasesRes.data);
       setFilteredPurchases(purchasesRes.data);
     }
-    if (farmersRes.data) setFarmers(farmersRes.data);
-    if (productsRes.data) setProducts(productsRes.data);
+
+    if (farmersRes.error) {
+      console.error('Error fetching farmers:', farmersRes.error);
+    } else if (farmersRes.data) {
+      setFarmers(farmersRes.data);
+    }
+
+    if (productsRes.error) {
+      console.error('Error fetching products:', productsRes.error);
+    } else if (productsRes.data) {
+      setProducts(productsRes.data);
+    }
     setLoading(false);
   };
 
@@ -117,7 +131,7 @@ export function PurchasesPage() {
         payment_type: formData.payment_type,
         total_amount: total,
         date: formData.date,
-        created_by: user?.id,
+        user_id: user!.id,
       }])
       .select()
       .single();
@@ -139,6 +153,20 @@ export function PurchasesPage() {
       .insert(purchaseItems);
 
     if (!itemsError) {
+      // Record transaction: You owe the farmer (Credit)
+      const { error: txError } = await supabase.from('transactions').insert({
+        farmer_id: parseInt(formData.farmer_id),
+        type: 'Credit',
+        amount: total,
+        description: `Purchase #${purchaseData.id}`,
+        date: formData.date,
+        related_purchase: purchaseData.id,
+      });
+
+      if (txError) {
+        console.error('Error inserting transaction for purchase:', txError);
+      }
+
       await supabase.from('audit_logs').insert({
         user_id: user?.id,
         action: 'INSERT',
@@ -155,6 +183,15 @@ export function PurchasesPage() {
   const viewDetails = (purchase: PurchaseWithDetails) => {
     setSelectedPurchase(purchase);
     setShowDetailModal(true);
+  };
+
+  const generateInvoice = (purchase: PurchaseWithDetails) => {
+    try {
+      simpleInvoiceGenerator.generatePurchaseInvoice(purchase);
+    } catch (error) {
+      console.error('Error generating invoice:', error);
+      alert('Error generating invoice. Please try again.');
+    }
   };
 
   const resetForm = () => {
@@ -261,8 +298,16 @@ export function PurchasesPage() {
                         <button
                           onClick={() => viewDetails(purchase)}
                           className="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-blue-50 inline-flex items-center"
+                          title="View Details"
                         >
                           <Eye size={16} />
+                        </button>
+                        <button
+                          onClick={() => generateInvoice(purchase)}
+                          className="text-green-600 hover:text-green-800 p-2 rounded-lg hover:bg-green-50 inline-flex items-center ml-2"
+                          title="Generate PDF Invoice"
+                        >
+                          <FileText size={16} />
                         </button>
                       </td>
                     </tr>
@@ -422,12 +467,22 @@ export function PurchasesPage() {
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-gray-900">Purchase Details</h2>
-                <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100"
-                >
-                  <X size={20} />
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => generateInvoice(selectedPurchase)}
+                    className="text-green-600 hover:text-green-800 p-2 rounded-lg hover:bg-green-50 inline-flex items-center gap-2"
+                    title="Generate PDF Invoice"
+                  >
+                    <FileText size={16} />
+                    <span className="text-sm font-medium">PDF Invoice</span>
+                  </button>
+                  <button
+                    onClick={() => setShowDetailModal(false)}
+                    className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-4">

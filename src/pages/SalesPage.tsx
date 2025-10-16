@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Search, Eye, X } from 'lucide-react';
+import { Plus, Search, Eye, X, FileText } from 'lucide-react';
+import { simpleInvoiceGenerator } from '../utils/simpleInvoiceGenerator';
 import type { Database } from '../lib/database.types';
 
 type CropSale = Database['public']['Tables']['crop_sales']['Row'];
@@ -52,11 +53,19 @@ export function SalesPage() {
       supabase.from('farmers').select('*').order('name'),
     ]);
 
-    if (salesRes.data) {
+    if (salesRes.error) {
+      console.error('Error fetching sales:', salesRes.error);
+      alert('Error loading sales. Please try again.');
+    } else if (salesRes.data) {
       setSales(salesRes.data);
       setFilteredSales(salesRes.data);
     }
-    if (farmersRes.data) setFarmers(farmersRes.data);
+
+    if (farmersRes.error) {
+      console.error('Error fetching farmers:', farmersRes.error);
+    } else if (farmersRes.data) {
+      setFarmers(farmersRes.data);
+    }
     setLoading(false);
   };
 
@@ -82,7 +91,7 @@ export function SalesPage() {
         total_value: totalValue,
         commission_percent: commissionPercent,
         date: formData.date,
-        created_by: user?.id,
+        user_id: user!.id,
       }])
       .select()
       .single();
@@ -100,6 +109,33 @@ export function SalesPage() {
       amount: commissionAmount,
     });
 
+    // Record transactions for sale:
+    // 1) Credit the farmer with total sale value (you owe farmer)
+    const { error: txCreditError } = await supabase.from('transactions').insert({
+      farmer_id: parseInt(formData.farmer_id),
+      type: 'Credit',
+      amount: totalValue,
+      description: `Sale #${saleData.id} gross`,
+      date: formData.date,
+      related_sale: saleData.id,
+    });
+    if (txCreditError) {
+      console.error('Error inserting credit transaction for sale:', txCreditError);
+    }
+
+    // 2) Debit the farmer for commission (farmer owes you commission)
+    const { error: txDebitError } = await supabase.from('transactions').insert({
+      farmer_id: parseInt(formData.farmer_id),
+      type: 'Debit',
+      amount: commissionAmount,
+      description: `Commission on sale #${saleData.id}`,
+      date: formData.date,
+      related_sale: saleData.id,
+    });
+    if (txDebitError) {
+      console.error('Error inserting debit transaction for sale commission:', txDebitError);
+    }
+
     await supabase.from('audit_logs').insert({
       user_id: user?.id,
       action: 'INSERT',
@@ -115,6 +151,15 @@ export function SalesPage() {
   const viewDetails = (sale: SaleWithFarmer) => {
     setSelectedSale(sale);
     setShowDetailModal(true);
+  };
+
+  const generateInvoice = (sale: SaleWithFarmer) => {
+    try {
+      simpleInvoiceGenerator.generateSaleInvoice(sale);
+    } catch (error) {
+      console.error('Error generating invoice:', error);
+      alert('Error generating invoice. Please try again.');
+    }
   };
 
   const resetForm = () => {
@@ -231,8 +276,16 @@ export function SalesPage() {
                         <button
                           onClick={() => viewDetails(sale)}
                           className="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-blue-50 inline-flex items-center"
+                          title="View Details"
                         >
                           <Eye size={16} />
+                        </button>
+                        <button
+                          onClick={() => generateInvoice(sale)}
+                          className="text-green-600 hover:text-green-800 p-2 rounded-lg hover:bg-green-50 inline-flex items-center ml-2"
+                          title="Generate PDF Invoice"
+                        >
+                          <FileText size={16} />
                         </button>
                       </td>
                     </tr>
@@ -367,12 +420,22 @@ export function SalesPage() {
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-gray-900">Sale Details</h2>
-                <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100"
-                >
-                  <X size={20} />
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => generateInvoice(selectedSale)}
+                    className="text-green-600 hover:text-green-800 p-2 rounded-lg hover:bg-green-50 inline-flex items-center gap-2"
+                    title="Generate PDF Invoice"
+                  >
+                    <FileText size={16} />
+                    <span className="text-sm font-medium">PDF Invoice</span>
+                  </button>
+                  <button
+                    onClick={() => setShowDetailModal(false)}
+                    className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-4">

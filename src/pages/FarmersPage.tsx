@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Search, Edit2, Trash2, X } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, X, Receipt } from 'lucide-react';
 import type { Database } from '../lib/database.types';
 
 type Farmer = Database['public']['Tables']['farmers']['Row'];
@@ -41,7 +41,10 @@ export function FarmersPage() {
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (!error && data) {
+    if (error) {
+      console.error('Error fetching farmers:', error);
+      alert('Error loading farmers. Please try again.');
+    } else if (data) {
       setFarmers(data);
       setFilteredFarmers(data);
     }
@@ -51,38 +54,59 @@ export function FarmersPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (editingFarmer) {
-      const { error } = await supabase
-        .from('farmers')
-        .update(formData)
-        .eq('id', editingFarmer.id);
+    try {
+      if (editingFarmer) {
+        const { error } = await supabase
+          .from('farmers')
+          .update(formData)
+          .eq('id', editingFarmer.id);
 
-      if (!error) {
+        if (error) {
+          console.error('Error updating farmer:', error);
+          alert('Error updating farmer. Please try again.');
+          return;
+        }
         await logAudit('UPDATE', 'farmers', editingFarmer.id, `Updated farmer: ${formData.name}`);
-      }
-    } else {
-      const { data, error } = await supabase
-        .from('farmers')
-        .insert([formData])
-        .select()
-        .single();
+      } else {
+        const { data, error } = await supabase
+          .from('farmers')
+          .insert([{ ...formData, user_id: user!.id }])
+          .select()
+          .single();
 
-      if (!error && data) {
-        await logAudit('INSERT', 'farmers', data.id, `Created farmer: ${formData.name}`);
+        if (error) {
+          console.error('Error creating farmer:', error);
+          alert('Error creating farmer. Please try again.');
+          return;
+        }
+        if (data) {
+          await logAudit('INSERT', 'farmers', data.id, `Created farmer: ${formData.name}`);
+        }
       }
+
+      resetForm();
+      fetchFarmers();
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      alert('An unexpected error occurred. Please try again.');
     }
-
-    resetForm();
-    fetchFarmers();
   };
 
   const handleDelete = async (farmer: Farmer) => {
     if (window.confirm(`Are you sure you want to delete ${farmer.name}?`)) {
-      const { error } = await supabase.from('farmers').delete().eq('id', farmer.id);
+      try {
+        const { error } = await supabase.from('farmers').delete().eq('id', farmer.id);
 
-      if (!error) {
+        if (error) {
+          console.error('Error deleting farmer:', error);
+          alert('Error deleting farmer. Please try again.');
+          return;
+        }
         await logAudit('DELETE', 'farmers', farmer.id, `Deleted farmer: ${farmer.name}`);
         fetchFarmers();
+      } catch (error) {
+        console.error('Unexpected error:', error);
+        alert('An unexpected error occurred. Please try again.');
       }
     }
   };
@@ -106,6 +130,15 @@ export function FarmersPage() {
       phone_number: farmer.phone_number || '',
     });
     setShowModal(true);
+  };
+
+  const viewTransactions = (farmer: Farmer) => {
+    // Navigate to transactions page with farmer ID
+    const event = new CustomEvent('navigate', { detail: 'transactions' });
+    window.dispatchEvent(event);
+    
+    // Store farmer ID for the transactions page
+    sessionStorage.setItem('selectedFarmerId', farmer.id.toString());
   };
 
   const resetForm = () => {
@@ -203,14 +236,23 @@ export function FarmersPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <button
+                          onClick={() => viewTransactions(farmer)}
+                          className="text-purple-600 hover:text-purple-800 p-2 rounded-lg hover:bg-purple-50 inline-flex items-center"
+                          title="View Transactions"
+                        >
+                          <Receipt size={16} />
+                        </button>
+                        <button
                           onClick={() => openEditModal(farmer)}
-                          className="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-blue-50 inline-flex items-center"
+                          className="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-blue-50 inline-flex items-center ml-2"
+                          title="Edit Farmer"
                         >
                           <Edit2 size={16} />
                         </button>
                         <button
                           onClick={() => handleDelete(farmer)}
                           className="text-red-600 hover:text-red-800 p-2 rounded-lg hover:bg-red-50 inline-flex items-center ml-2"
+                          title="Delete Farmer"
                         >
                           <Trash2 size={16} />
                         </button>

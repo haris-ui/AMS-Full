@@ -62,6 +62,7 @@ export function Dashboard() {
       setRecentActivity(activityRes.data || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      alert('Error loading dashboard data. Please try again.');
     } finally {
       setLoading(false);
     }

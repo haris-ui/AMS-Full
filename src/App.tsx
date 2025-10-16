@@ -6,6 +6,7 @@ import { FarmersPage } from './pages/FarmersPage';
 import { ProductsPage } from './pages/ProductsPage';
 import { PurchasesPage } from './pages/PurchasesPage';
 import { SalesPage } from './pages/SalesPage';
+import { FarmerTransactionsPage } from './pages/FarmerTransactionsPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { Layout } from './components/Layout';
 
@@ -52,6 +53,8 @@ function AppRouter() {
         return <PurchasesPage />;
       case 'sales':
         return <SalesPage />;
+      case 'transactions':
+        return <FarmerTransactionsPage />;
       case 'reports':
         return <ReportsPage />;
       default:

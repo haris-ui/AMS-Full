@@ -9,7 +9,8 @@ import {
   LogOut,
   Menu,
   X,
-  FileText
+  FileText,
+  Receipt
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -31,6 +32,7 @@ const navigation: NavItem[] = [
   { name: 'Products', icon: Package, path: 'products' },
   { name: 'Purchases', icon: ShoppingCart, path: 'purchases' },
   { name: 'Sales', icon: TrendingUp, path: 'sales' },
+  { name: 'Transactions', icon: Receipt, path: 'transactions' },
   { name: 'Reports', icon: FileText, path: 'reports' },
 ];
 

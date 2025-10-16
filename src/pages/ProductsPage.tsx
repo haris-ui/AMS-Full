@@ -38,7 +38,10 @@ export function ProductsPage() {
       .select('*')
       .order('name', { ascending: true });
 
-    if (!error && data) {
+    if (error) {
+      console.error('Error fetching products:', error);
+      alert('Error loading products. Please try again.');
+    } else if (data) {
       setProducts(data);
       setFilteredProducts(data);
     }
@@ -66,7 +69,7 @@ export function ProductsPage() {
     } else {
       const { data, error } = await supabase
         .from('products')
-        .insert([productData])
+        .insert([{ ...productData, user_id: user!.id }])
         .select()
         .single();
 
