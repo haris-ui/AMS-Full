@@ -119,113 +119,166 @@ export function Dashboard() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-1">
-          Welcome back, {profile?.full_name || 'User'}
+    <div className="container-responsive py-6 lg:py-8 space-y-6 lg:space-y-8 safe-bottom">
+      {/* Header Section */}
+      <header className="animate-in">
+        <h1 className="text-responsive-xl font-bold text-gray-900 mb-2">
+          Dashboard
+        </h1>
+        <p className="text-gray-600 text-responsive-sm">
+          Welcome back, <span className="font-medium text-gray-900">{profile?.full_name || 'User'}</span>
         </p>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statCards.map((card) => {
+      {/* Stats Cards */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 stagger-animation">
+        {statCards.map((card, index) => {
           const Icon = card.icon;
           return (
-            <div
+            <article
               key={card.title}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+              className="card p-6 group cursor-pointer transform hover:scale-[1.02] transition-all duration-200"
+              style={{ '--stagger': index } as React.CSSProperties}
             >
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{card.title}</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-2">{card.value}</p>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-600 mb-2">{card.title}</p>
+                  <p className="text-2xl lg:text-3xl font-bold text-gray-900 tracking-tight">
+                    {card.value.toLocaleString()}
+                  </p>
                 </div>
-                <div className={`${card.bgColor} p-3 rounded-lg`}>
-                  <Icon className={card.textColor} size={24} />
+                <div className={`${card.bgColor} p-3 rounded-xl shadow-sm group-hover:shadow-md transition-shadow duration-200`}>
+                  <Icon className={`${card.textColor} transition-transform duration-200 group-hover:scale-110`} size={24} />
                 </div>
               </div>
-            </div>
+            </article>
           );
         })}
-      </div>
+      </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-blue-50 p-2 rounded-lg">
-              <DollarSign className="text-blue-600" size={20} />
+      {/* Financial and Activity Sections */}
+      <section className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
+        {/* Financial Overview */}
+        <article className="card p-6 lg:p-8">
+          <header className="flex items-center gap-3 mb-6">
+            <div className="bg-gradient-to-br from-primary-50 to-primary-100 p-3 rounded-xl">
+              <DollarSign className="text-primary-600" size={22} />
             </div>
-            <h2 className="text-lg font-semibold text-gray-900">Financial Overview</h2>
-          </div>
+            <h2 className="text-lg lg:text-xl font-semibold text-gray-900">Financial Overview</h2>
+          </header>
+          
           <div className="space-y-4">
-            <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-              <span className="text-gray-700 font-medium">Total Purchases</span>
-              <span className="text-xl font-bold text-gray-900">
-                Rs. {stats.totalPurchaseAmount.toLocaleString()}
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+              <span className="text-gray-700 font-medium mb-1 sm:mb-0">Total Purchases</span>
+              <span className="text-xl lg:text-2xl font-bold text-gray-900">
+                ₹{stats.totalPurchaseAmount.toLocaleString()}
               </span>
             </div>
-            <div className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-              <span className="text-gray-700 font-medium">Total Sales</span>
-              <span className="text-xl font-bold text-gray-900">
-                Rs. {stats.totalSalesAmount.toLocaleString()}
+            
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+              <span className="text-gray-700 font-medium mb-1 sm:mb-0">Total Sales</span>
+              <span className="text-xl lg:text-2xl font-bold text-gray-900">
+                ₹{stats.totalSalesAmount.toLocaleString()}
               </span>
             </div>
-            <div className="flex justify-between items-center p-4 bg-green-50 rounded-lg border border-green-200">
-              <span className="text-green-700 font-medium">Net Margin</span>
-              <span className="text-xl font-bold text-green-700">
-                Rs. {(stats.totalSalesAmount - stats.totalPurchaseAmount).toLocaleString()}
+            
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-4 bg-gradient-to-r from-success-50 to-success-100 rounded-xl border border-success-200 shadow-sm">
+              <span className="text-success-700 font-semibold mb-1 sm:mb-0 flex items-center gap-2">
+                <div className="w-2 h-2 bg-success-500 rounded-full"></div>
+                Net Margin
+              </span>
+              <span className="text-xl lg:text-2xl font-bold text-success-700">
+                ₹{(stats.totalSalesAmount - stats.totalPurchaseAmount).toLocaleString()}
               </span>
             </div>
           </div>
-        </div>
+        </article>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-purple-50 p-2 rounded-lg">
-              <Activity className="text-purple-600" size={20} />
+        {/* Recent Activity */}
+        <article className="card p-6 lg:p-8">
+          <header className="flex items-center gap-3 mb-6">
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-3 rounded-xl">
+              <Activity className="text-purple-600" size={22} />
             </div>
-            <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
-          </div>
-          <div className="space-y-3">
+            <h2 className="text-lg lg:text-xl font-semibold text-gray-900">Recent Activity</h2>
+          </header>
+          
+          <div className="space-y-3 scrollbar-thin max-h-80 overflow-y-auto">
             {recentActivity.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No recent activity</p>
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Activity className="text-gray-400" size={24} />
+                </div>
+                <p className="text-gray-500 text-sm">No recent activity</p>
+                <p className="text-gray-400 text-xs mt-1">Activity will appear here as you use the system</p>
+              </div>
             ) : (
-              recentActivity.map((activity) => (
+              recentActivity.map((activity, index) => (
                 <div
                   key={activity.id}
-                  className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="p-4 border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 animate-in"
+                  style={{ '--stagger': index } as React.CSSProperties}
                 >
-                  <p className="text-sm font-medium text-gray-900">{activity.action}</p>
-                  {activity.description && (
-                    <p className="text-xs text-gray-600 mt-1">{activity.description}</p>
-                  )}
-                  <p className="text-xs text-gray-500 mt-1">
-                    {new Date(activity.created_at).toLocaleString()}
-                  </p>
+                  <div className="flex items-start gap-3">
+                    <div className="w-2 h-2 bg-primary-500 rounded-full mt-2 flex-shrink-0"></div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 mb-1">{activity.action}</p>
+                      {activity.description && (
+                        <p className="text-xs text-gray-600 mb-2 leading-relaxed">{activity.description}</p>
+                      )}
+                      <p className="text-xs text-gray-500">
+                        {new Date(activity.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               ))
             )}
           </div>
-        </div>
-      </div>
+        </article>
+      </section>
 
-      <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-lg p-8 text-white">
-        <h2 className="text-2xl font-bold mb-2">Quick Actions</h2>
-        <p className="text-blue-100 mb-6">
-          Get started by managing your farmers, products, and transactions
-        </p>
-        <div className="flex flex-wrap gap-3">
-          <button className="bg-white text-blue-600 px-6 py-2 rounded-lg font-medium hover:bg-blue-50 transition-colors">
-            Add Farmer
-          </button>
-          <button className="bg-white text-blue-600 px-6 py-2 rounded-lg font-medium hover:bg-blue-50 transition-colors">
-            New Purchase
-          </button>
-          <button className="bg-white text-blue-600 px-6 py-2 rounded-lg font-medium hover:bg-blue-50 transition-colors">
-            Record Sale
-          </button>
+      {/* Quick Actions Section */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700 rounded-2xl shadow-strong p-6 sm:p-8 lg:p-10 text-white">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="w-full h-full" style={{ backgroundImage: 'radial-gradient(circle at 30px 30px, rgba(255,255,255,0.1) 2px, transparent 2px)', backgroundSize: '60px 60px' }}></div>
         </div>
-      </div>
+        
+        <div className="relative z-10">
+          <header className="mb-6 lg:mb-8">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-3 text-balance">
+              Quick Actions
+            </h2>
+            <p className="text-primary-100 text-sm sm:text-base leading-relaxed max-w-2xl">
+              Get started by managing your farmers, products, and transactions with these quick shortcuts
+            </p>
+          </header>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            <button className="btn bg-white text-primary-600 px-6 py-3 rounded-xl font-semibold hover:bg-gray-50 hover:shadow-lg active:scale-95 transition-all duration-200 group">
+              <span className="flex items-center gap-2">
+                <Users size={18} className="group-hover:scale-110 transition-transform duration-200" />
+                Add Farmer
+              </span>
+            </button>
+            
+            <button className="btn bg-white text-primary-600 px-6 py-3 rounded-xl font-semibold hover:bg-gray-50 hover:shadow-lg active:scale-95 transition-all duration-200 group">
+              <span className="flex items-center gap-2">
+                <ShoppingCart size={18} className="group-hover:scale-110 transition-transform duration-200" />
+                New Purchase
+              </span>
+            </button>
+            
+            <button className="btn bg-white text-primary-600 px-6 py-3 rounded-xl font-semibold hover:bg-gray-50 hover:shadow-lg active:scale-95 transition-all duration-200 group">
+              <span className="flex items-center gap-2">
+                <TrendingUp size={18} className="group-hover:scale-110 transition-transform duration-200" />
+                Record Sale
+              </span>
+            </button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
